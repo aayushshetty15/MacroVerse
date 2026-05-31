@@ -680,7 +680,6 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
   }
 }
 
-// ── Reusable Card ─────────────────────────────────────────────────────────────
 class _Card extends StatelessWidget {
   final Widget child;
   const _Card({required this.child});
