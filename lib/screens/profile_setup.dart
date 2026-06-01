@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macroverse/constants/app_colors.dart';
-
+import 'profile_setup1.dart';
 
 class AppTextStyles {
   static const displayLg = TextStyle(
@@ -61,9 +61,11 @@ class OnboardingStep1Screen extends StatefulWidget {
 }
 
 class _OnboardingStep1ScreenState extends State<OnboardingStep1Screen> {
+  final _nameController = TextEditingController();
   final _ageController = TextEditingController();
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
+  String? _selectedGender;
 
   final int _totalSteps = 3;
   final int _currentStep = 1;
@@ -72,14 +74,85 @@ class _OnboardingStep1ScreenState extends State<OnboardingStep1Screen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _ageController.dispose();
     _weightController.dispose();
     _heightController.dispose();
     super.dispose();
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
   void _onContinue() {
-    // Navigate to step 2
+    final name = _nameController.text.trim();
+    final gender = _selectedGender;
+    final ageText = _ageController.text.trim();
+    final weightText = _weightController.text.trim();
+    final heightText = _heightController.text.trim();
+
+    if (name.isEmpty) {
+      _showError('Please enter your full name');
+      return;
+    }
+    if (gender == null) {
+      _showError('Please select your gender');
+      return;
+    }
+    final age = int.tryParse(ageText);
+    if (age == null || age <= 0 || age > 120) {
+      _showError('Please enter a valid age');
+      return;
+    }
+    final weight = double.tryParse(weightText);
+    if (weight == null || weight <= 0 || weight > 500) {
+      _showError('Please enter a valid weight');
+      return;
+    }
+    final height = double.tryParse(heightText);
+    if (height == null || height <= 0 || height > 300) {
+      _showError('Please enter a valid height');
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OnboardingStep2Screen(
+          name: name,
+          gender: gender,
+          age: age,
+          weight: weight,
+          height: height,
+        ),
+      ),
+    );
   }
 
   @override
@@ -267,6 +340,35 @@ class _OnboardingStep1ScreenState extends State<OnboardingStep1Screen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Name field
+          Text('Full Name', style: AppTextStyles.labelMd),
+          const SizedBox(height: 8),
+          _buildTextField(
+            controller: _nameController,
+            hint: 'e.g. John Doe',
+            suffix: '',
+            keyboardType: TextInputType.name,
+          ),
+
+          const SizedBox(height: 20),
+
+          // Gender Selector
+          Text('Gender', style: AppTextStyles.labelMd),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _buildGenderButton('Male', Icons.male_rounded),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildGenderButton('Female', Icons.female_rounded),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
           // Age field
           Text('Age', style: AppTextStyles.labelMd),
           const SizedBox(height: 8),
@@ -329,6 +431,45 @@ class _OnboardingStep1ScreenState extends State<OnboardingStep1Screen> {
     );
   }
 
+  Widget _buildGenderButton(String gender, IconData icon) {
+    final isSelected = _selectedGender == gender;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedGender = gender),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 52,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryFixed.withValues(alpha: 0.35)
+              : AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryContainer : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primary : AppColors.outline,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              gender,
+              style: AppTextStyles.bodyMd.copyWith(
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? AppColors.primary : AppColors.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
@@ -363,16 +504,17 @@ class _OnboardingStep1ScreenState extends State<OnboardingStep1Screen> {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Text(
-              suffix,
-              style: AppTextStyles.labelMd.copyWith(
-                color: AppColors.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
+          if (suffix.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Text(
+                suffix,
+                style: AppTextStyles.labelMd.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

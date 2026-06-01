@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:macroverse/screens/dashboard_screen.dart';
+import 'package:macroverse/screens/splashscreen.dart';
+import 'package:macroverse/services/storage_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await StorageService.init();
   runApp(const MacroVerseApp());
 }
 
@@ -16,7 +19,7 @@ class MacroVerseApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: const DashboardScreen(),
+      home: const SplashScreen(),
     );
   }
 }

@@ -1,5 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:macroverse/services/storage_service.dart';
+import 'package:macroverse/screens/dashboard_screen.dart';
+import 'package:macroverse/screens/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -49,7 +52,22 @@ class _SplashScreenState extends State<SplashScreen>
           ),
         );
 
-    _controller.forward();
+    _controller.forward().then((_) {
+      _checkProfileAndNavigate();
+    });
+  }
+
+  void _checkProfileAndNavigate() {
+    final profile = StorageService.getUserProfile();
+    if (profile != null) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+      );
+    }
   }
 
   @override

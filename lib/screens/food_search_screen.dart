@@ -1,140 +1,22 @@
 import 'package:flutter/material.dart';
-
 import '../constants/app_colors.dart';
-
-// ─── Design Tokens ──────────────────────────────────────────────────────────
-
-class AppTextStyles {
-  static const displayLg = TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 32,
-    fontWeight: FontWeight.w700,
-    height: 1.25,
-    letterSpacing: -0.64,
-    color: AppColors.onSurface,
-  );
-  static const headlineMd = TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 24,
-    fontWeight: FontWeight.w600,
-    height: 1.33,
-    letterSpacing: -0.24,
-    color: AppColors.onSurface,
-  );
-  static const headlineSm = TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    height: 1.4,
-    color: AppColors.onSurface,
-  );
-  static const bodyMd = TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-    height: 1.5,
-    color: AppColors.onSurface,
-  );
-  static const labelMd = TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: FontWeight.w600,
-    height: 1.43,
-    color: AppColors.onSurface,
-  );
-  static const labelSm = TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 12,
-    fontWeight: FontWeight.w500,
-    height: 1.33,
-    color: AppColors.onSurfaceVariant,
-  );
-  static const dataLg = TextStyle(
-    fontFamily: 'Inter',
-    fontSize: 22,
-    fontWeight: FontWeight.w700,
-    height: 1.27,
-    color: AppColors.primaryContainer,
-  );
-}
-
-class RecentFood {
-  final String name;
-  final String subtitle;
-  final int kcal;
-  final String imageAsset; // use a placeholder network image
-
-  const RecentFood({
-    required this.name,
-    required this.subtitle,
-    required this.kcal,
-    required this.imageAsset,
-  });
-}
-
-class FrequentMeal {
-  final String name;
-  final int kcal;
-  final String imageAsset;
-
-  const FrequentMeal({
-    required this.name,
-    required this.kcal,
-    required this.imageAsset,
-  });
-}
-
-const recentFoods = [
-  RecentFood(
-    name: 'Sourdough Avocado Toast',
-    subtitle: '2 slices • 180g',
-    kcal: 342,
-    imageAsset:
-        'https://images.unsplash.com/photo-1541519227354-08fa5d50c820?w=120&q=80',
-  ),
-  RecentFood(
-    name: 'Greek Feta Salad',
-    subtitle: 'Large bowl • 350g',
-    kcal: 285,
-    imageAsset:
-        'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=120&q=80',
-  ),
-  RecentFood(
-    name: 'Grilled Chicken Breast',
-    subtitle: 'Skinless • 200g',
-    kcal: 310,
-    imageAsset:
-        'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=120&q=80',
-  ),
-];
-
-const frequentMeals = [
-  FrequentMeal(
-    name: 'Power Protein Bowl',
-    kcal: 540,
-    imageAsset:
-        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&q=80',
-  ),
-  FrequentMeal(
-    name: 'Green Detox Shake',
-    kcal: 210,
-    imageAsset:
-        'https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=300&q=80',
-  ),
-];
-
-// ─── Main Screen ─────────────────────────────────────────────────────────────
+import '../models/food_model.dart';
+import 'add_food_screen.dart';
+import 'custom_food_creator.dart';
 
 class FoodSearchScreen extends StatefulWidget {
-  const FoodSearchScreen({super.key});
+  final String mealType;
+  final DateTime? selectedDate;
+  const FoodSearchScreen({super.key, required this.mealType, this.selectedDate});
 
   @override
   State<FoodSearchScreen> createState() => _FoodSearchScreenState();
 }
 
 class _FoodSearchScreenState extends State<FoodSearchScreen> {
-  int _selectedTab = 1; // Diary is active
-  int _selectedFilter = 0; // Recent, Frequent, My Meals
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _query = '';
+  int _selectedFilter = 0;
 
   final List<String> _filterLabels = ['Recent', 'Frequent', 'My Meals'];
   final List<IconData> _filterIcons = [
@@ -143,10 +25,286 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     Icons.restaurant_menu_rounded,
   ];
 
+  // Local premium food database (Indian-Specific & Protein-Rich with multiple varieties)
+  final List<Food> _foodDb = [
+    // ── Egg Options ────────────────────────────────────────
+    Food(
+      name: 'Hard Boiled Egg (High Protein)',
+      servingSize: 100,
+      calories: 155,
+      protein: 13,
+      carbs: 1.1,
+      fat: 11,
+      imageAsset: 'https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=300&q=80',
+    ),
+    Food(
+      name: 'Half Boiled Egg (Soft Boiled - Protein Rich)',
+      servingSize: 100,
+      calories: 143,
+      protein: 12.6,
+      carbs: 0.8,
+      fat: 9.5,
+      imageAsset: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=300&q=80',
+    ),
+    Food(
+      name: 'Egg Bhurji (3 Eggs - Indian Style)',
+      servingSize: 150,
+      calories: 240,
+      protein: 20,
+      carbs: 3,
+      fat: 16,
+      imageAsset: 'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?w=300&q=80',
+    ),
+    Food(
+      name: 'Egg Omelette (Double Egg - Premium)',
+      servingSize: 120,
+      calories: 180,
+      protein: 14,
+      carbs: 2,
+      fat: 13,
+      imageAsset: 'https://images.unsplash.com/photo-1494597564530-871f2b93ac55?w=300&q=80',
+    ),
+    Food(
+      name: 'Egg Masala Curry (Protein Rich)',
+      servingSize: 200,
+      calories: 220,
+      protein: 15,
+      carbs: 8,
+      fat: 14,
+      imageAsset: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=300&q=80',
+    ),
+
+    // ── Paneer Options ──────────────────────────────────────
+    Food(
+      name: 'Paneer Tikka (Tandoori Style)',
+      servingSize: 150,
+      calories: 278,
+      protein: 18,
+      carbs: 6,
+      fat: 21,
+      imageAsset: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=300&q=80',
+    ),
+    Food(
+      name: 'Paneer Bhurji (High Protein)',
+      servingSize: 150,
+      calories: 298,
+      protein: 15,
+      carbs: 8,
+      fat: 22,
+      imageAsset: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&q=80',
+    ),
+    Food(
+      name: 'Low-Fat Palak Paneer (High Protein)',
+      servingSize: 200,
+      calories: 220,
+      protein: 15,
+      carbs: 8,
+      fat: 14,
+      imageAsset: 'https://images.unsplash.com/photo-1601050690597-df056fb4ce78?w=300&q=80',
+    ),
+    Food(
+      name: 'Paneer Butter Masala (Rich Protein)',
+      servingSize: 200,
+      calories: 380,
+      protein: 16,
+      carbs: 10,
+      fat: 31,
+      imageAsset: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=300&q=80',
+    ),
+
+    // ── Chicken Options ─────────────────────────────────────
+    Food(
+      name: 'Tandoori Chicken (Protein Rich)',
+      servingSize: 200,
+      calories: 300,
+      protein: 38,
+      carbs: 4,
+      fat: 14,
+      imageAsset: 'https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?w=300&q=80',
+    ),
+    Food(
+      name: 'Chicken Biryani (Lean Chicken)',
+      servingSize: 350,
+      calories: 548,
+      protein: 34,
+      carbs: 68,
+      fat: 16,
+      imageAsset: 'https://images.unsplash.com/photo-1633945274405-b6c8069047b0?w=300&q=80',
+    ),
+    Food(
+      name: 'Butter Chicken (Lean Chicken)',
+      servingSize: 200,
+      calories: 420,
+      protein: 30,
+      carbs: 12,
+      fat: 28,
+      imageAsset: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=300&q=80',
+    ),
+    Food(
+      name: 'Grilled Chicken Breast (Lean Protein)',
+      servingSize: 150,
+      calories: 240,
+      protein: 42,
+      carbs: 0,
+      fat: 5,
+      imageAsset: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=300&q=80',
+    ),
+    Food(
+      name: 'Chicken Masala Curry (Indian Style)',
+      servingSize: 200,
+      calories: 290,
+      protein: 28,
+      carbs: 6,
+      fat: 16,
+      imageAsset: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=300&q=80',
+    ),
+
+    // ── Soya Options ────────────────────────────────────────
+    Food(
+      name: 'Soya Chunks Bhurji (Protein Rich)',
+      servingSize: 150,
+      calories: 220,
+      protein: 24,
+      carbs: 18,
+      fat: 6,
+      imageAsset: 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=300&q=80',
+    ),
+    Food(
+      name: 'Soya Chunk Curry (High Protein)',
+      servingSize: 200,
+      calories: 240,
+      protein: 25,
+      carbs: 22,
+      fat: 8,
+      imageAsset: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300&q=80',
+    ),
+    Food(
+      name: 'Roasted Soya Chunks (Healthy Snack)',
+      servingSize: 50,
+      calories: 170,
+      protein: 21,
+      carbs: 14,
+      fat: 3,
+      imageAsset: 'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=300&q=80',
+    ),
+
+    // ── Fish Options ────────────────────────────────────────
+    Food(
+      name: 'Fish Tikka (Tandoori Grilled - Protein Rich)',
+      servingSize: 150,
+      calories: 210,
+      protein: 26,
+      carbs: 2,
+      fat: 10,
+      imageAsset: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=300&q=80',
+    ),
+    Food(
+      name: 'Bengali Fish Curry (Rahu Masala)',
+      servingSize: 200,
+      calories: 250,
+      protein: 22,
+      carbs: 5,
+      fat: 15,
+      imageAsset: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=300&q=80',
+    ),
+
+    // ── Dal, Grains & Seeds ────────────────────────────────
+    Food(
+      name: 'High-Protein Moong Dal Khichdi',
+      servingSize: 300,
+      calories: 290,
+      protein: 13,
+      carbs: 48,
+      fat: 6,
+      imageAsset: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&q=80',
+    ),
+    Food(
+      name: 'Dal Tadka (High Protein Lentils)',
+      servingSize: 200,
+      calories: 160,
+      protein: 9.5,
+      carbs: 24,
+      fat: 3.5,
+      imageAsset: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&q=80',
+    ),
+    Food(
+      name: 'Chana Masala (Chickpea Curry)',
+      servingSize: 200,
+      calories: 230,
+      protein: 11,
+      carbs: 35,
+      fat: 5,
+      imageAsset: 'https://images.unsplash.com/photo-1585938338392-50a59970d8ee?w=300&q=80',
+    ),
+    Food(
+      name: 'Sattu Protein Drink (High Protein)',
+      servingSize: 250,
+      calories: 180,
+      protein: 14,
+      carbs: 24,
+      fat: 3,
+      imageAsset: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300&q=80',
+    ),
+    Food(
+      name: 'Sprouted Moong Salad (High Protein)',
+      servingSize: 200,
+      calories: 180,
+      protein: 14,
+      carbs: 26,
+      fat: 1.5,
+      imageAsset: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300&q=80',
+    ),
+    Food(
+      name: 'Double-Protein Indian Curd (Dahi)',
+      servingSize: 150,
+      calories: 120,
+      protein: 12,
+      carbs: 6,
+      fat: 5,
+      imageAsset: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=300&q=80',
+    ),
+    Food(
+      name: 'High-Protein Besan Chilla',
+      servingSize: 120,
+      calories: 210,
+      protein: 12,
+      carbs: 28,
+      fat: 5,
+      imageAsset: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=300&q=80',
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl.addListener(() {
+      setState(() {
+        _query = _searchCtrl.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  List<Food> get _filteredFoods {
+    if (_query.trim().isEmpty) {
+      return _foodDb.take(4).toList(); // Show a couple recent ones
+    }
+    return _foodDb
+        .where((f) => f.name.toLowerCase().contains(_query.toLowerCase()))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final results = _filteredFoods;
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -154,7 +312,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             _buildTopBar(),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 100),
+                padding: const EdgeInsets.only(bottom: 40),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -163,14 +321,27 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                     const SizedBox(height: 16),
                     _buildFilterChips(),
                     const SizedBox(height: 24),
-                    _buildSectionHeader('Recent Foods', onViewAll: () {}),
-                    const SizedBox(height: 12),
-                    _buildRecentFoodsList(),
-                    const SizedBox(height: 28),
-                    _buildSectionHeader('Frequent Meals'),
-                    const SizedBox(height: 12),
-                    _buildFrequentMealsGrid(),
-                    const SizedBox(height: 16),
+                    
+                    // Conditionally render query results or recent lists
+                    if (_query.trim().isEmpty) ...[
+                      _buildSectionHeader('Recent Foods'),
+                      const SizedBox(height: 12),
+                      _buildFoodsList(results),
+                      const SizedBox(height: 28),
+                      _buildSectionHeader('Frequent Meals'),
+                      const SizedBox(height: 12),
+                      _buildFrequentMealsRow(),
+                    ] else ...[
+                      _buildSectionHeader('Search Results (${results.length})'),
+                      const SizedBox(height: 12),
+                      if (results.isEmpty)
+                        _buildNoResultsCard()
+                      else
+                        _buildFoodsList(results),
+                    ],
+                    
+                    const SizedBox(height: 24),
+                    _buildCreateCustomFoodShortcut(),
                   ],
                 ),
               ),
@@ -178,69 +349,57 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(),
-      floatingActionButton: _buildScanFab(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
     );
   }
 
   // ── Top Bar ──────────────────────────────────────────────────────────────
-
   Widget _buildTopBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
-          // Avatar
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0050CB), Color(0xFF003FA4)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.person_rounded,
-              color: Colors.white,
-              size: 22,
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: AppColors.onSurface,
+                size: 20,
+              ),
             ),
           ),
-          const SizedBox(width: 12),
-          Text(
-            'MacroVerse',
-            style: AppTextStyles.headlineSm.copyWith(fontSize: 22),
-          ),
-          const Spacer(),
-          // Bell icon
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.surfaceContainerLowest,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 8,
+          const SizedBox(width: 14),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Add to ${widget.mealType}',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onSurface,
                 ),
-              ],
-            ),
-            child: const Icon(
-              Icons.notifications_outlined,
-              color: AppColors.onSurface,
-              size: 22,
-            ),
+              ),
+              const Text(
+                'Search or create custom entries',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.outline,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -248,19 +407,18 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 
   // ── Search Bar ───────────────────────────────────────────────────────────
-
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         height: 52,
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(32),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 12,
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
               offset: const Offset(0, 2),
             ),
           ],
@@ -268,30 +426,38 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         child: Row(
           children: [
             const SizedBox(width: 16),
-            Icon(
+            const Icon(
               Icons.search_rounded,
-              color: AppColors.onSurfaceVariant,
+              color: AppColors.outline,
               size: 20,
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                'Search food, brands, or recipes...',
-                style: AppTextStyles.bodyMd.copyWith(
-                  color: AppColors.onSurfaceVariant,
+              child: TextField(
+                controller: _searchCtrl,
+                style: const TextStyle(
                   fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.onSurface,
+                ),
+                decoration: const InputDecoration(
+                  hintText: 'Search food, brands, or recipes...',
+                  hintStyle: TextStyle(
+                    color: AppColors.outlineVariant,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
                 ),
               ),
             ),
-            Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.all(6),
-              child: Icon(
-                Icons.qr_code_scanner_rounded,
-                color: AppColors.primary,
-                size: 22,
+            if (_query.isNotEmpty)
+              IconButton(
+                onPressed: () => _searchCtrl.clear(),
+                icon: const Icon(Icons.close_rounded, color: AppColors.outline, size: 18),
               ),
-            ),
+            const SizedBox(width: 8),
           ],
         ),
       ),
@@ -299,7 +465,6 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 
   // ── Filter Chips ─────────────────────────────────────────────────────────
-
   Widget _buildFilterChips() {
     return SizedBox(
       height: 42,
@@ -314,26 +479,24 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
             onTap: () => setState(() => _selectedFilter = i),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.primary
-                    : AppColors.surfaceContainerLowest,
+                    ? AppColors.primaryContainer
+                    : AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected ? Colors.transparent : AppColors.outlineVariant,
+                ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.3),
+                          color: AppColors.primaryContainer.withValues(alpha: 0.25),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
                       ]
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 6,
-                        ),
-                      ],
+                    : [],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -341,17 +504,15 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                   Icon(
                     _filterIcons[i],
                     size: 16,
-                    color: isSelected
-                        ? Colors.white
-                        : AppColors.onSurfaceVariant,
+                    color: isSelected ? Colors.white : AppColors.outline,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     _filterLabels[i],
-                    style: AppTextStyles.labelMd.copyWith(
-                      color: isSelected
-                          ? Colors.white
-                          : AppColors.onSurfaceVariant,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? Colors.white : AppColors.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -364,315 +525,390 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 
   // ── Section Header ───────────────────────────────────────────────────────
-
-  Widget _buildSectionHeader(String title, {VoidCallback? onViewAll}) {
+  Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          Text(title, style: AppTextStyles.headlineSm),
-          const Spacer(),
-          if (onViewAll != null)
-            GestureDetector(
-              onTap: onViewAll,
-              child: Text(
-                'View All',
-                style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
-              ),
-            ),
-        ],
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: AppColors.onSurface,
+        ),
       ),
     );
   }
 
-  // ── Recent Foods List ────────────────────────────────────────────────────
-
-  Widget _buildRecentFoodsList() {
+  // ── Foods List ───────────────────────────────────────────────────────────
+  Widget _buildFoodsList(List<Food> foods) {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      itemCount: recentFoods.length,
+      itemCount: foods.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (context, i) => _RecentFoodCard(food: recentFoods[i]),
-    );
-  }
-
-  // ── Frequent Meals Grid ──────────────────────────────────────────────────
-
-  Widget _buildFrequentMealsGrid() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: frequentMeals
-            .map(
-              (meal) => Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    right: meal == frequentMeals.last ? 0 : 12,
-                  ),
-                  child: _FrequentMealCard(meal: meal),
+      itemBuilder: (context, i) {
+        final f = foods[i];
+        return GestureDetector(
+          onTap: () async {
+            final navigator = Navigator.of(context);
+            final logged = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FoodDetailsScreen(
+                  food: f,
+                  mealType: widget.mealType,
+                  selectedDate: widget.selectedDate,
                 ),
               ),
-            )
-            .toList(),
-      ),
-    );
-  }
-
-  // ── Bottom Navigation ────────────────────────────────────────────────────
-
-  Widget _buildBottomNav() {
-    final items = [
-      (Icons.grid_view_rounded, 'Dashboard'),
-      (Icons.menu_book_rounded, 'Diary'),
-      (Icons.chat_bubble_outline_rounded, 'Newsfeed'),
-      (Icons.assignment_outlined, 'Plans'),
-      (Icons.more_horiz_rounded, 'More'),
-    ];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.4),
-            blurRadius: 24,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(items.length, (i) {
-              final isActive = i == _selectedTab;
-              return GestureDetector(
-                onTap: () => setState(() => _selectedTab = i),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? Colors.white.withValues(alpha: 0.15)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        items[i].$1,
-                        color: Colors.white.withValues(
-                          alpha: isActive ? 1.0 : 0.65,
+            );
+            if (logged == true && mounted) {
+              navigator.pop(true); // Propagate reload trigger
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: f.imageAsset != null
+                      ? Image.network(
+                          f.imageAsset!,
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => _buildFallbackIcon(),
+                        )
+                      : _buildFallbackIcon(),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        f.name,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.onSurface,
                         ),
-                        size: 22,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Serving Size: ${f.servingSize.round()}g',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.outline,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${f.calories.round()}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primaryContainer,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      items[i].$2,
-                      style: AppTextStyles.labelSm.copyWith(
-                        color: Colors.white.withValues(
-                          alpha: isActive ? 1.0 : 0.65,
-                        ),
+                    const Text(
+                      'kcal',
+                      style: TextStyle(
                         fontSize: 11,
-                        fontWeight: isActive
-                            ? FontWeight.w600
-                            : FontWeight.w400,
+                        color: AppColors.outline,
                       ),
                     ),
                   ],
                 ),
-              );
-            }),
+              ],
+            ),
           ),
+        );
+      },
+    );
+  }
+
+  // ── Frequent Meals Row ───────────────────────────────────────────────────
+  Widget _buildFrequentMealsRow() {
+    // Show cards referencing pre-populated standard meals
+    final frequent = [
+      _foodDb[0], // Tandoori Chicken
+      _foodDb[1], // Paneer Tikka
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: frequent.map((f) {
+          return Expanded(
+            child: GestureDetector(
+              onTap: () async {
+                final navigator = Navigator.of(context);
+                final logged = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FoodDetailsScreen(
+                      food: f,
+                      mealType: widget.mealType,
+                      selectedDate: widget.selectedDate,
+                    ),
+                  ),
+                );
+                if (logged == true && mounted) {
+                  navigator.pop(true);
+                }
+              },
+              child: Container(
+                margin: EdgeInsets.only(
+                  right: f == frequent.last ? 0 : 12,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      height: 100,
+                      width: double.infinity,
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(20),
+                        ),
+                        child: f.imageAsset != null
+                            ? Image.network(
+                                f.imageAsset!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => _buildFrequentFallback(),
+                              )
+                            : _buildFrequentFallback(),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            f.name,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${f.calories.round()} kcal',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // ── No Results Card ──────────────────────────────────────────────────────
+  Widget _buildNoResultsCard() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.search_off_rounded, color: AppColors.outlineVariant, size: 48),
+            const SizedBox(height: 12),
+            const Text(
+              'No matching food items found',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.onSurface,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Try adjusting your keywords or register a custom food entry.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.outline,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                final logged = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CustomFoodCreatorScreen(
+                      mealType: widget.mealType,
+                      selectedDate: widget.selectedDate,
+                    ),
+                  ),
+                );
+                if (logged == true && mounted) {
+                  navigator.pop(true);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryContainer,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text('Create Custom Food'),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ── Scan FAB ─────────────────────────────────────────────────────────────
+  // ── Create Custom Food Shortcut ──────────────────────────────────────────
+  Widget _buildCreateCustomFoodShortcut() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3F5FC),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE1E5F2)),
+        ),
+        child: Row(
+          children: [
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Can\'t find your food?',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Create and log a custom macro profile.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                final logged = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CustomFoodCreatorScreen(
+                      mealType: widget.mealType,
+                      selectedDate: widget.selectedDate,
+                    ),
+                  ),
+                );
+                if (logged == true && mounted) {
+                  navigator.pop(true);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.primaryContainer,
+                elevation: 0,
+                side: const BorderSide(color: Color(0xFFD1D8EC)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Create Custom'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-  Widget _buildScanFab() {
+  Widget _buildFallbackIcon() {
     return Container(
-      width: 56,
-      height: 56,
-      margin: const EdgeInsets.only(bottom: 70, right: 4),
-      decoration: BoxDecoration(
-        color: AppColors.secondaryContainer,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.secondaryContainer.withValues(alpha: 0.5),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+      width: 48,
+      height: 48,
+      color: const Color(0xFFEAF0FF),
+      child: const Icon(
+        Icons.restaurant_outlined,
+        color: AppColors.primaryContainer,
+        size: 22,
+      ),
+    );
+  }
+
+  Widget _buildFrequentFallback() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFFEAEEFF), Color(0xFFD5E2FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       child: const Icon(
-        Icons.qr_code_scanner_rounded,
-        color: AppColors.secondary,
-        size: 26,
-      ),
-    );
-  }
-}
-
-// ─── Recent Food Card ─────────────────────────────────────────────────────────
-
-class _RecentFoodCard extends StatelessWidget {
-  final RecentFood food;
-  const _RecentFoodCard({required this.food});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Food image
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              food.imageAsset,
-              width: 64,
-              height: 64,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Container(
-                width: 64,
-                height: 64,
-                color: AppColors.surfaceContainerLow,
-                child: const Icon(
-                  Icons.restaurant_rounded,
-                  color: AppColors.outlineVariant,
-                  size: 28,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          // Name & subtitle
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  food.name,
-                  style: AppTextStyles.labelMd.copyWith(fontSize: 15),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(food.subtitle, style: AppTextStyles.labelSm),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Calories
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('${food.kcal}', style: AppTextStyles.dataLg),
-              Text(
-                'kcal',
-                style: AppTextStyles.labelSm.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Frequent Meal Card ───────────────────────────────────────────────────────
-
-class _FrequentMealCard extends StatelessWidget {
-  final FrequentMeal meal;
-  const _FrequentMealCard({required this.meal});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.hardEdge,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image
-          AspectRatio(
-            aspectRatio: 1.15,
-            child: Image.network(
-              meal.imageAsset,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Container(
-                color: AppColors.surfaceContainerLow,
-                child: const Icon(
-                  Icons.fastfood_rounded,
-                  color: AppColors.outlineVariant,
-                  size: 36,
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  meal.name,
-                  style: AppTextStyles.labelMd.copyWith(fontSize: 13),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${meal.kcal} kcal',
-                  style: AppTextStyles.labelMd.copyWith(
-                    color: AppColors.primary,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        Icons.fastfood_rounded,
+        color: AppColors.primaryContainer,
+        size: 32,
       ),
     );
   }

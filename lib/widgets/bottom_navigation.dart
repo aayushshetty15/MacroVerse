@@ -8,6 +8,7 @@ import 'package:macroverse/screens/progress_screen.dart';
 class CustomBottomNav extends StatelessWidget {
   final int selectedIndex;
   const CustomBottomNav({super.key, required this.selectedIndex});
+
   static final List<NavItem> items = [
     NavItem(
       icon: Icons.dashboard_outlined,
@@ -20,8 +21,8 @@ class CustomBottomNav extends StatelessWidget {
       screen: const DiaryScreen(),
     ),
     NavItem(
-      icon: Icons.newspaper_outlined,
-      label: 'Calorie Tracker',
+      icon: Icons.local_fire_department_outlined,
+      label: 'Tracker',
       screen: const CalorieEngineScreen(),
     ),
     NavItem(
@@ -48,11 +49,11 @@ class CustomBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF16A34A),
+        color: const Color.fromARGB(255, 51, 37, 208),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF16A34A).withValues(alpha: 0.4),
+            color: const Color.fromARGB(255, 62, 49, 236).withValues(alpha: 0.4),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),
@@ -63,6 +64,7 @@ class CustomBottomNav extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: List.generate(items.length, (i) {
               final active = i == selectedIndex;
 
@@ -81,16 +83,22 @@ class CustomBottomNav extends StatelessWidget {
                         size: 24,
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        items[i].label,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: active
-                              ? FontWeight.w700
-                              : FontWeight.w400,
-                          color: active
-                              ? Colors.white
-                              : Colors.white.withValues(alpha: 0.5),
+                      SizedBox(
+                        height: 22,
+                        child: Text(
+                          items[i].label,
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: active
+                                ? FontWeight.w700
+                                : FontWeight.w400,
+                            color: active
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.5),
+                          ),
                         ),
                       ),
                     ],

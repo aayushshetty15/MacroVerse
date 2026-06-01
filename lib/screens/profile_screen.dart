@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:macroverse/widgets/bottom_navigation.dart';
 import 'package:macroverse/widgets/custom_appbar.dart';
+import 'package:macroverse/services/storage_service.dart';
+import 'package:macroverse/screens/onboarding_screen.dart';
 
 import '../constants/app_colors.dart';
 
@@ -414,7 +416,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ── Log Out Button ─────────────────────────────────────────────────────────
   Widget _buildLogOutButton() {
     return GestureDetector(
-      onTap: () {},
+      onTap: () async {
+        await StorageService.clearAllData();
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+            (route) => false,
+          );
+        }
+      },
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),

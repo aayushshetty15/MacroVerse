@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import 'profile_setup.dart';
 class AppTextStyles {
   static const headlineLgMobile = TextStyle(
     fontFamily: 'Inter',
@@ -62,7 +63,7 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            _buildBottomActions(),
+            _buildBottomActions(context),
           ],
         ),
       ),
@@ -181,7 +182,7 @@ class WelcomeScreen extends StatelessWidget {
 
   // ── Bottom CTA ───────────────────────────────────────────────────────────────
 
-  Widget _buildBottomActions() {
+  Widget _buildBottomActions(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
       child: Column(
@@ -191,7 +192,14 @@ class WelcomeScreen extends StatelessWidget {
             width: double.infinity,
             height: 58,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const OnboardingStep1Screen(),
+                  ),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.onPrimary,

@@ -1,13 +1,16 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-
 import '../constants/app_colors.dart';
-
-// ── Design Tokens ────────────────────────────────────────────────────────────
+import '../models/food_model.dart';
+import '../models/meal_model.dart';
+import '../services/storage_service.dart';
 
 // ── Food Details Screen ───────────────────────────────────────────────────────
 class FoodDetailsScreen extends StatefulWidget {
-  const FoodDetailsScreen({super.key});
+  final Food food;
+  final String mealType;
+  final DateTime? selectedDate;
+  const FoodDetailsScreen({super.key, required this.food, required this.mealType, this.selectedDate});
 
   @override
   State<FoodDetailsScreen> createState() => _FoodDetailsScreenState();
@@ -18,25 +21,25 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
   int _servings = 1;
   int _selectedMealIdx = 0;
   bool _isFavorited = false;
-  String _selectedServing = '1 Bowl (350g)';
+  late String _selectedServing;
   bool _showServingDropdown = false;
 
   late AnimationController _ringCtrl;
   late Animation<double> _ringAnim;
 
-  // Base macros per serving
-  static const int _baseKcal = 480;
-  static const int _baseProtein = 35;
-  static const int _baseCarbs = 15;
-  static const int _baseFat = 10;
+  int get _totalKcal => (widget.food.calories * _servings * _servingMultiplier).round();
+  int get _totalProtein => (widget.food.protein * _servings * _servingMultiplier).round();
+  int get _totalCarbs => (widget.food.carbs * _servings * _servingMultiplier).round();
+  int get _totalFat => (widget.food.fat * _servings * _servingMultiplier).round();
 
-  int get _totalKcal => _baseKcal * _servings;
-  int get _totalProtein => _baseProtein * _servings;
-  int get _totalCarbs => _baseCarbs * _servings;
-  int get _totalFat => _baseFat * _servings;
+  double get _servingMultiplier {
+    if (_selectedServing.startsWith('½')) return 0.5;
+    if (_selectedServing.startsWith('2')) return 2.0;
+    return 1.0;
+  }
 
-  final _meals = ['Lunch', 'Dinner', 'Snack', 'Breakfast'];
-  final _servingOptions = ['1 Bowl (350g)', '½ Bowl (175g)', '2 Bowls (700g)'];
+  final _meals = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+  late List<String> _servingOptions;
 
   @override
   void initState() {
@@ -47,6 +50,21 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
     );
     _ringAnim = CurvedAnimation(parent: _ringCtrl, curve: Curves.easeOutCubic);
     _ringCtrl.forward();
+
+    // Setup dynamic serving size labels
+    final grams = widget.food.servingSize;
+    _selectedServing = '1 Portion (${grams.round()}g)';
+    _servingOptions = [
+      '1 Portion (${grams.round()}g)',
+      '½ Portion (${(grams / 2).round()}g)',
+      '2 Portions (${(grams * 2).round()}g)'
+    ];
+
+    // Select initial meal index
+    final idx = _meals.indexWhere((m) => m.toLowerCase() == widget.mealType.toLowerCase());
+    if (idx != -1) {
+      _selectedMealIdx = idx;
+    }
   }
 
   @override
@@ -77,7 +95,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
                       const SizedBox(height: 16),
                       _buildMicronutrientsCard(),
                       // Space for bottom bar
-                      const SizedBox(height: 160),
+                      const SizedBox(height: 180),
                     ],
                   ),
                 ),
@@ -98,7 +116,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
       backgroundColor: AppColors.surface,
       elevation: 0,
       leading: GestureDetector(
-        onTap: () {},
+        onTap: () => Navigator.of(context).pop(),
         child: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -125,7 +143,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
         GestureDetector(
           onTap: () => setState(() => _isFavorited = !_isFavorited),
           child: Container(
-            margin: const EdgeInsets.only(right: 8),
+            margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.9),
@@ -140,45 +158,18 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
             ),
           ),
         ),
-        GestureDetector(
-          onTap: () {},
-          child: Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.9),
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.secondary, width: 2),
-            ),
-            child: const Icon(
-              Icons.content_paste_rounded,
-              color: AppColors.onSurface,
-              size: 18,
-            ),
-          ),
-        ),
       ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
           children: [
-            // Teal placeholder image background
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF3AADA0), Color(0xFF1E7A70)],
-                ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.restaurant_rounded,
-                  color: Color(0x44FFFFFF),
-                  size: 80,
-                ),
-              ),
-            ),
+            widget.food.imageAsset != null
+                ? Image.network(
+                    widget.food.imageAsset!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => _buildHeroPlaceholder(),
+                  )
+                : _buildHeroPlaceholder(),
             // Bottom gradient + title
             Positioned(
               bottom: 0,
@@ -195,19 +186,19 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      'Grilled Salmon Bowl',
-                      style: TextStyle(
+                      widget.food.name,
+                      style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'Fresh Nordic Kitchen  •  480 kcal',
-                      style: TextStyle(
+                      'Serving Size: ${widget.food.servingSize.round()}g  •  ${widget.food.calories.round()} kcal',
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
                         color: Color(0xCCFFFFFF),
@@ -223,8 +214,32 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
     );
   }
 
+  Widget _buildHeroPlaceholder() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0050CB), Color(0xFF003FA4)],
+        ),
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.restaurant_rounded,
+          color: Color(0x22FFFFFF),
+          size: 80,
+        ),
+      ),
+    );
+  }
+
   // ── Macro Ring Card ────────────────────────────────────────────────────────
   Widget _buildMacroRingCard() {
+    final double sum = (_totalProtein + _totalCarbs + _totalFat).toDouble();
+    final double proteinFrac = sum > 0 ? _totalProtein / sum : 0.33;
+    final double carbsFrac = sum > 0 ? _totalCarbs / sum : 0.33;
+    final double fatFrac = sum > 0 ? _totalFat / sum : 0.34;
+
     return _Card(
       child: Column(
         children: [
@@ -242,14 +257,9 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
                     size: const Size(140, 140),
                     painter: _MacroRingPainter(
                       progress: _ringAnim.value,
-                      proteinFrac:
-                          _totalProtein /
-                          (_totalProtein + _totalCarbs + _totalFat),
-                      carbsFrac:
-                          _totalCarbs /
-                          (_totalProtein + _totalCarbs + _totalFat),
-                      fatFrac:
-                          _totalFat / (_totalProtein + _totalCarbs + _totalFat),
+                      proteinFrac: proteinFrac,
+                      carbsFrac: carbsFrac,
+                      fatFrac: fatFrac,
                     ),
                   ),
                 ),
@@ -420,12 +430,11 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
                             child: Text(
                               opt,
                               style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: selected
-                                    ? AppColors.primaryContainer
-                                    : AppColors.onSurface,
-                              ),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: selected
+                                      ? AppColors.primaryContainer
+                                      : AppColors.onSurface),
                             ),
                           ),
                           if (selected)
@@ -496,11 +505,14 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
 
   // ── Micronutrients Card ────────────────────────────────────────────────────
   Widget _buildMicronutrientsCard() {
+    final double fiber = (widget.food.carbs * 0.15 * _servings * _servingMultiplier);
+    final double sodium = (widget.food.calories * 0.8 * _servings * _servingMultiplier);
+    final double sugar = (widget.food.carbs * 0.2 * _servings * _servingMultiplier);
+
     final micros = [
-      _Micro('Dietary Fiber', '${6 * _servings}g'),
-      _Micro('Sodium', '${420 * _servings}mg'),
-      _Micro('Sugars', '${4 * _servings}g'),
-      _Micro('Cholesterol', '${55 * _servings}mg'),
+      _Micro('Dietary Fiber', '${fiber.toStringAsFixed(1)}g'),
+      _Micro('Sodium', '${sodium.round()}mg'),
+      _Micro('Sugars', '${sugar.toStringAsFixed(1)}g'),
     ];
 
     return _Card(
@@ -508,7 +520,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'MICRONUTRIENTS',
+            'ESTIMATED MICRONUTRIENTS',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -561,7 +573,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
   Widget _buildBottomBar() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors    .surface,
+        color: AppColors.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
@@ -647,7 +659,35 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen>
                     child: SizedBox(
                       height: 52,
                       child: ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: () async {
+                          // Build new food entry with multiplied macros
+                          final multipliedFood = Food(
+                            name: widget.food.name,
+                            servingSize: widget.food.servingSize * _servings * _servingMultiplier,
+                            calories: widget.food.calories * _servings * _servingMultiplier,
+                            protein: widget.food.protein * _servings * _servingMultiplier,
+                            carbs: widget.food.carbs * _servings * _servingMultiplier,
+                            fat: widget.food.fat * _servings * _servingMultiplier,
+                          );
+
+                          final meal = Meal(
+                            mealType: _meals[_selectedMealIdx],
+                            foods: [multipliedFood],
+                            date: widget.selectedDate ?? DateTime.now(),
+                          );
+
+                          await StorageService.addMeal(meal);
+
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Added "${widget.food.name}" to ${_meals[_selectedMealIdx]}!'),
+                                backgroundColor: AppColors.tertiaryContainer,
+                              ),
+                            );
+                            Navigator.of(context).pop(true);
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryContainer,
                           foregroundColor: Colors.white,
@@ -706,7 +746,6 @@ class _Card extends StatelessWidget {
 }
 
 // ── Macro Ring Painter ────────────────────────────────────────────────────────
-// Three-segment arc: teal=protein, amber=carbs, blue=fat + grey track
 class _MacroRingPainter extends CustomPainter {
   final double progress;
   final double proteinFrac;
@@ -721,7 +760,7 @@ class _MacroRingPainter extends CustomPainter {
   });
 
   static const _strokeWidth = 12.0;
-  static const _gap = 0.03; // radians gap between segments
+  static const _gap = 0.03;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -741,9 +780,9 @@ class _MacroRingPainter extends CustomPainter {
 
     // Segments colours
     final segments = [
-      (proteinFrac, const Color(0xFF008072)), // teal – protein
-      (carbsFrac, const Color(0xFFFFBA20)), // amber – carbs
-      (fatFrac, const Color(0xFF0066FF)), // blue  – fat
+      (proteinFrac, const Color(0xFF008072)), // protein
+      (carbsFrac, const Color(0xFFFFBA20)), // carbs
+      (fatFrac, const Color(0xFF0066FF)), // fat
     ];
 
     double startAngle = -math.pi / 2;
@@ -776,7 +815,6 @@ class _MacroRingPainter extends CustomPainter {
       old.fatFrac != fatFrac;
 }
 
-// ── Data models ───────────────────────────────────────────────────────────────
 class _Micro {
   final String name;
   final String value;

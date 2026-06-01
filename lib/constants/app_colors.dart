@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   // Backgrounds
   static const Color background = Color(0xFFF1F4F7);
-  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surface = Color(0xFFF7FAFD);
 
   // Surface Variants
   static const Color surfaceContainerLowest = Color(0xFFFFFFFF);
@@ -13,6 +13,7 @@ class AppColors {
   // Brand Colors
   static const Color primary = Color(0xFF0050CB);
   static const Color primaryContainer = Color(0xFF0066FF);
+  static const Color primaryFixed = Color(0xFFDAE1FF);
   static const Color onPrimary = Color(0xFFFFFFFF);
 
   // Text Colors
@@ -23,10 +24,14 @@ class AppColors {
   static const Color outline = Color(0xFF727687);
   static const Color outlineVariant = Color(0xFFC2C6D8);
 
-  // Secondary (Gold/Amber)
+  // Secondary (Gold)
   static const Color secondary = Color(0xFFFFB800);
   static const Color secondaryDark = Color(0xFF7C5800);
   static const Color secondaryContainer = Color(0xFFFFB700);
+
+  // Tertiary (Health / Success)
+  static const Color tertiary = Color(0xFF006559);
+  static const Color tertiaryContainer = Color(0xFF008072);
 
   // Accent Colors
   static const Color teal = Color(0xFF008072);
@@ -42,8 +47,15 @@ class AppColors {
   static const Color error = Color(0xFFBA1A1A);
   static const Color errorContainer = Color(0xFFFFDAD6);
 
-  static const Color tertiary = Color(0xFF006559);
-  static const Color tertiaryContainer = Color(0xFF008072);
+  // Goal Cards
+  static const Color goalPurpleBg = Color(0xFFEAE8FF);
+  static const Color goalPurpleIcon = Color(0xFF5B4FCF);
+
+  static const Color goalAmberBg = Color(0xFFFFF0C2);
+  static const Color goalAmberIcon = Color(0xFF9A6800);
+
+  static const Color goalTealBg = Color(0xFFCCF5EE);
+  static const Color goalTealIcon = Color(0xFF006559);
 
   // Misc
   static const Color avatarBlue = Color(0xFF4A90D9);
