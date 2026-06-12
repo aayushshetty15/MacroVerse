@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:macroverse/widgets/bottom_navigation.dart';
 import 'package:macroverse/widgets/custom_appbar.dart';
 import 'package:macroverse/services/storage_service.dart';
+import 'package:macroverse/services/auth_service.dart';
 import 'package:macroverse/screens/onboarding_screen.dart';
+import 'package:macroverse/screens/profile_setup.dart';
 
 import '../constants/app_colors.dart';
 
@@ -65,6 +67,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileCard() {
+    final profile = StorageService.getUserProfile();
+    final name = profile?.name ?? AuthService.getCurrentSession()?['name'] ?? 'User';
+    final weightStr = profile != null ? '${profile.weight.toStringAsFixed(1)} kg' : '-- kg';
+    final streakStr = StorageService.getMeals().isNotEmpty ? '1 Day' : '0 Days';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -86,9 +93,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Alex Johnson',
-            style: TextStyle(
+          Text(
+            name,
+            style: const TextStyle(
               fontFamily: 'Inter',
               fontSize: 28,
               fontWeight: FontWeight.w700,
@@ -98,7 +105,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Member since January 2024',
+            'Member since June 2026',
             style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 14,
@@ -112,12 +119,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Expanded(
                 child: _buildStatChip(
                   label: 'Current Weight',
-                  value: '78.5 kg',
+                  value: weightStr,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildStatChip(label: 'Daily Streak', value: '14 Days'),
+                child: _buildStatChip(label: 'Daily Streak', value: streakStr),
               ),
             ],
           ),
@@ -176,6 +183,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ── Fitness Goal Card ──────────────────────────────────────────────────────
   Widget _buildFitnessGoalCard() {
+    final profile = StorageService.getUserProfile();
+    final goalTitle = profile?.goal ?? 'Lose Weight';
+    final targetWeightVal = profile?.targetWeight ?? 75.0;
+    
+    double progress = 0.0;
+    if (profile != null) {
+      final startWeight = profile.weight + 2.0; // Mock start weight
+      final current = profile.weight;
+      final target = profile.targetWeight;
+      if ((startWeight - target).abs() > 0.1) {
+        progress = ((startWeight - current) / (startWeight - target)).clamp(0.0, 1.0);
+      } else {
+        progress = 1.0;
+      }
+    }
+    final progressPercent = (progress * 100).round();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -209,23 +233,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Weight Loss',
-                      style: TextStyle(
+                      goalTitle,
+                      style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: AppColors.onSurface,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      'Target: 75.0 kg',
-                      style: TextStyle(
+                      'Target: ${targetWeightVal.toStringAsFixed(1)} kg',
+                      style: const TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
@@ -236,7 +260,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const OnboardingStep1Screen()),
+                  );
+                },
                 child: const Text(
                   'Edit',
                   style: TextStyle(
@@ -252,8 +281,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text(
+            children: [
+              const Text(
                 'Progress',
                 style: TextStyle(
                   fontFamily: 'Inter',
@@ -263,8 +292,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               Text(
-                '65%',
-                style: TextStyle(
+                '$progressPercent%',
+                style: const TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -278,7 +307,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(99),
             child: LinearProgressIndicator(
-              value: 0.65,
+              value: progress,
               minHeight: 8,
               backgroundColor: const Color(0xFFE0E3E6),
               valueColor: const AlwaysStoppedAnimation<Color>(
@@ -417,6 +446,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildLogOutButton() {
     return GestureDetector(
       onTap: () async {
+        await AuthService.logOut();
         await StorageService.clearAllData();
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(

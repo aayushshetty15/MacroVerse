@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:macroverse/screens/login.dart';
+import 'package:macroverse/services/auth_service.dart';
+import 'package:macroverse/screens/profile_setup.dart';
 import '../constants/app_colors.dart';
 
 class AppTextStyles {
@@ -46,6 +48,207 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  void _showSocialAuthOverlay({required String provider, required VoidCallback onComplete}) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return PopScope(
+          canPop: false,
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      const SizedBox(
+                        width: 72,
+                        height: 72,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryContainer),
+                        ),
+                      ),
+                      provider == 'Google'
+                          ? Container(
+                              width: 38,
+                              height: 38,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  'G',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF4285F4),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              width: 38,
+                              height: 38,
+                              decoration: const BoxDecoration(
+                                color: Colors.black,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.apple_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Signing in with $provider...',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Please wait while we secure your connection',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Dismiss overlay
+      onComplete();
+    });
+  }
+
+  void _onSignUp() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (name.isEmpty) {
+      _showError('Please enter your full name');
+      return;
+    }
+    if (email.isEmpty) {
+      _showError('Please enter your email address');
+      return;
+    }
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      _showError('Please enter a valid email address');
+      return;
+    }
+    if (password.length < 6) {
+      _showError('Password must be at least 6 characters');
+      return;
+    }
+
+    final success = await AuthService.signUp(name, email, password);
+    if (!success) {
+      _showError('This email is already registered');
+      return;
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created successfully!'),
+          backgroundColor: AppColors.primaryContainer,
+        ),
+      );
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const OnboardingStep1Screen()),
+        (route) => false,
+      );
+    }
+  }
+
+  void _onSocialSignUp(String provider) {
+    _showSocialAuthOverlay(
+      provider: provider,
+      onComplete: () async {
+        final mockName = provider == 'Google' ? 'Google User' : 'Apple User';
+        final mockEmail = provider == 'Google' ? 'google_user@gmail.com' : 'apple_user@icloud.com';
+        
+        final success = provider == 'Google'
+            ? await AuthService.signInWithGoogle(mockName, mockEmail)
+            : await AuthService.signInWithApple(mockName, mockEmail);
+            
+        if (success && mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const OnboardingStep1Screen()),
+            (route) => false,
+          );
+        }
+      },
+    );
+  }
 
   @override
   void dispose() {
@@ -200,7 +403,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: _onSignUp,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.onPrimary,
@@ -232,10 +435,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
           _buildSocialButton(
             label: 'Google',
             icon: _googleIcon(),
-            onTap: () {},
+            onTap: () => _onSocialSignUp('Google'),
           ),
           const SizedBox(height: 12),
-          _buildSocialButton(label: 'Apple', icon: _appleIcon(), onTap: () {}),
+          _buildSocialButton(
+            label: 'Apple',
+            icon: _appleIcon(),
+            onTap: () => _onSocialSignUp('Apple'),
+          ),
         ],
       ),
     );

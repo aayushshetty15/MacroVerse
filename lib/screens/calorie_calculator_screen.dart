@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:macroverse/widgets/bottom_navigation.dart';
 import 'package:macroverse/widgets/custom_appbar.dart';
+import 'package:macroverse/services/storage_service.dart';
 
 import '../constants/app_colors.dart';
 
@@ -69,6 +70,26 @@ class _CalorieEngineScreenState extends State<CalorieEngineScreen>
   @override
   void initState() {
     super.initState();
+    final profile = StorageService.getUserProfile();
+    if (profile != null) {
+      _isMale = profile.gender.toLowerCase() == 'male';
+      _weight = profile.weight;
+      _height = profile.height;
+      _age = profile.age.toDouble();
+      
+      if (profile.activityLevel == 'Sedentary') {
+        _activityLevel = 0.1;
+      } else if (profile.activityLevel == 'Lightly Active') {
+        _activityLevel = 0.3;
+      } else if (profile.activityLevel == 'Moderately Active') {
+        _activityLevel = 0.5;
+      } else if (profile.activityLevel == 'Very Active') {
+        _activityLevel = 0.7;
+      } else if (profile.activityLevel == 'Extra Active') {
+        _activityLevel = 0.9;
+      }
+    }
+
     _ringCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -658,7 +679,50 @@ class _CalorieEngineScreenState extends State<CalorieEngineScreen>
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: () async {
+          final profile = StorageService.getUserProfile();
+          if (profile != null) {
+            String actLevel = 'Moderately Active';
+            if (_activityLevel < 0.20) {
+              actLevel = 'Sedentary';
+            } else if (_activityLevel < 0.40) {
+              actLevel = 'Lightly Active';
+            } else if (_activityLevel < 0.60) {
+              actLevel = 'Moderately Active';
+            } else if (_activityLevel < 0.80) {
+              actLevel = 'Very Active';
+            } else {
+              actLevel = 'Extra Active';
+            }
+
+            final updated = profile.copyWith(
+              gender: _isMale ? 'Male' : 'Female',
+              weight: _weight,
+              height: _height,
+              age: _age.round(),
+              activityLevel: actLevel,
+            );
+            await StorageService.saveUserProfile(updated);
+            
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Biometrics updated successfully!'),
+                  backgroundColor: AppColors.primaryContainer,
+                ),
+              );
+            }
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please complete onboarding first!'),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+            }
+          }
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryContainer,
           foregroundColor: AppColors.onPrimary,

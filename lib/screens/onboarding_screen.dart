@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
-import 'profile_setup.dart';
+import 'login.dart';
+import 'signup.dart';
 class AppTextStyles {
   static const headlineLgMobile = TextStyle(
     fontFamily: 'Inter',
@@ -196,7 +197,7 @@ class WelcomeScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const OnboardingStep1Screen(),
+                    builder: (context) => const SignUpScreen(),
                   ),
                 );
               },
@@ -242,7 +243,14 @@ class WelcomeScreen extends StatelessWidget {
                 style: AppTextStyles.bodyMd.copyWith(fontSize: 14),
               ),
               GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                  );
+                },
                 child: Text(
                   'Log In',
                   style: AppTextStyles.labelMd.copyWith(

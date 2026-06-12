@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macroverse/constants/app_colors.dart';
+import 'package:macroverse/services/auth_service.dart';
 import 'profile_setup1.dart';
 
 class AppTextStyles {
@@ -71,6 +72,15 @@ class _OnboardingStep1ScreenState extends State<OnboardingStep1Screen> {
   final int _currentStep = 1;
 
   double get _progress => _currentStep / _totalSteps;
+
+  @override
+  void initState() {
+    super.initState();
+    final session = AuthService.getCurrentSession();
+    if (session != null && session['name'] != null) {
+      _nameController.text = session['name'] as String;
+    }
+  }
 
   @override
   void dispose() {

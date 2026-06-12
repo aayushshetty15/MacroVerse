@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:macroverse/screens/login.dart';
-import 'package:macroverse/screens/signup.dart';
 import 'package:macroverse/screens/splashscreen.dart';
 import 'package:macroverse/services/storage_service.dart';
+import 'package:macroverse/services/auth_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageService.init();
+  await AuthService.init();
   runApp(const MacroVerseApp());
 }
 
@@ -20,7 +21,7 @@ class MacroVerseApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: const SignUpScreen(),
+      home: const SplashScreen(),
     );
   }
 }
